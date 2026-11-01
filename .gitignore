@@ -56,6 +56,9 @@ cover/
 *.mo
 *.pot
 
+#Jupyter Notebook
+*.ipynb
+
 # Django stuff:
 *.log
 local_settings.py
