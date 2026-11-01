@@ -44,3 +44,15 @@ class Model:
         if not isinstance(self.learning_rate, float) or  self.learning_rate <= 0: 
             raise ValueError("Please enter a valid learning rate")
 
+class ModelManager:
+    def __init__(self):
+        self.models = []
+
+    def add_model(self,model):
+        if isinstance(model,Model):
+            self.models.append(model)
+        else:
+            raise TypeError("Please enter a valid model run")
+
+    def get_models(self):
+        return self.models[:]
