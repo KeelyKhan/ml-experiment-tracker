@@ -23,5 +23,3 @@ Developed for CSC-44102 Foundations of Programming and Software Engineering, Kee
 ## How to run
 _To be added._
 
-## GenAI acknowledgement
-This README was drafted with the help of Claude (Anthropic, https://claude.ai). The application code is my own work.
