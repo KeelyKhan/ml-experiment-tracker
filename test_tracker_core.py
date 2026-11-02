@@ -1,4 +1,7 @@
 import unittest
+import tempfile
+import os
+import json
 from tracker_core import Model, ModelManager
 
 class TestModels(unittest.TestCase):
@@ -76,10 +79,50 @@ class TestModelManager(unittest.TestCase):
         runs = manager.get_models()
         self.assertEqual(len(runs),1)
 
+class TestLoadSave(unittest.TestCase):
+    def test_round_trip(self):
+        manager = ModelManager()
+        manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
+        run = manager.get_models()
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"test.json")
+            manager.save_json(path)
+            new_manager = ModelManager()
+            new_manager.load_json(path)
+            loaded_run = new_manager.get_models()
+            self.assertEqual(run,loaded_run)
 
-if __name__ == "__main__":
-    unittest.main()
+    def test_invalid_file(self):
+        manager = ModelManager()
+        original_run = Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015)
+        manager.add_model(original_run)
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"bad_json.json")
+            with open(path,"w",encoding="utf-8") as f:
+                json.dump(
+                            [
+                                {
+                                    "model_name": "ResNet18",
+                                    "training_accuracy": 150,
+                                    "training_loss": 0.12,
+                                    "validation_accuracy": 87.5,
+                                    "validation_loss": 0.15,
+                                    "epochs": 10,
+                                    "batch_size": 32,
+                                    "learning_rate": 0.01
+                                }
+                            ], f)
+            with self.assertRaises(ValueError):
+                manager.load_json(path)
 
+            self.assertEqual([original_run],manager.get_models())
+
+    def test_file_not_found(self):
+        manager = ModelManager()
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"missing_json.json")
+            with self.assertRaises(FileNotFoundError):
+                manager.load_json(path)
 
 
 
