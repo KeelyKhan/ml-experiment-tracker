@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, asdict
 
 @dataclass
 class Model:
@@ -56,3 +57,8 @@ class ModelManager:
 
     def get_models(self):
         return self.models[:]
+
+    def save_json(self,path):
+        runs = [asdict(model) for model in self.models]
+        with open(path,"w", encoding = "utf-8") as f:
+            json.dump(runs, f, indent = 4)
