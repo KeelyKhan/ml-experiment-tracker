@@ -62,3 +62,11 @@ class ModelManager:
         runs = [asdict(model) for model in self.models]
         with open(path,"w", encoding = "utf-8") as f:
             json.dump(runs, f, indent = 4)
+
+    def load_json(self,path):
+        with open(path,"r",encoding="utf-8") as f:
+            runs = json.load(f)
+        new_runs = []
+        for run in runs:
+            new_runs.append(Model(**run))
+        self.models = new_runs
