@@ -80,7 +80,7 @@ class TestModelManager(unittest.TestCase):
         self.assertEqual(len(runs),1)
 
 class TestLoadSave(unittest.TestCase):
-    def test_round_trip(self):
+    def test_json_round_trip(self):
         manager = ModelManager()
         manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
         run = manager.get_models()
@@ -92,7 +92,7 @@ class TestLoadSave(unittest.TestCase):
             loaded_run = new_manager.get_models()
             self.assertEqual(run,loaded_run)
 
-    def test_invalid_file(self):
+    def test_json_invalid_file(self):
         manager = ModelManager()
         original_run = Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015)
         manager.add_model(original_run)
@@ -117,12 +117,54 @@ class TestLoadSave(unittest.TestCase):
 
             self.assertEqual([original_run],manager.get_models())
 
-    def test_file_not_found(self):
+    def test_json_file_not_found(self):
         manager = ModelManager()
         with tempfile.TemporaryDirectory() as folder:
             path = os.path.join(folder,"missing_json.json")
             with self.assertRaises(FileNotFoundError):
                 manager.load_json(path)
 
+    def test_csv_round_trip(self):
+        manager = ModelManager()
+        manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
+        runs = manager.get_models()
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"runs.csv")
+            manager.save_csv(path)
+            new_manager = ModelManager()
+            new_manager.load_csv(path)
+            loaded_runs = new_manager.get_models()
+            self.assertEqual(runs,loaded_runs)
 
+    def test_csv_invalid_file(self):
+        manager = ModelManager()
+        original_run = Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015)
+        manager.add_model(original_run)
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"bad_run.csv")
+            with open(path,"w",newline="",encoding="utf-8") as f:
+                f.write("model_name,training_accuracy,training_loss,validation_accuracy,validation_loss,epochs,batch_size,learning_rate\n")
+                f.write("ResNet18,abc,0.017,98.6,0.018,10,32,0.015\n")
+            with self.assertRaises(ValueError):
+                manager.load_csv(path)
+            self.assertEqual([original_run],manager.get_models())
 
+    def test_csv_file_not_found(self):
+        manager = ModelManager()
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"missing.csv")
+            with self.assertRaises(FileNotFoundError):
+                manager.load_csv(path)
+
+    def test_csv_accuracy_out_of_range(self):
+        manager = ModelManager()
+        original_run = Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015)
+        manager.add_model(original_run)
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"bad_run.csv")
+            with open(path,"w",newline="",encoding="utf-8") as f:
+                f.write("model_name,training_accuracy,training_loss,validation_accuracy,validation_loss,epochs,batch_size,learning_rate\n")
+                f.write("ResNet18,150,0.017,98.6,0.018,10,32,0.015\n")
+            with self.assertRaises(ValueError):
+                manager.load_csv(path)
+            self.assertEqual([original_run],manager.get_models())
