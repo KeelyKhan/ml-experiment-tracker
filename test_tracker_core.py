@@ -123,6 +123,3 @@ class TestLoadSave(unittest.TestCase):
             path = os.path.join(folder,"missing_json.json")
             with self.assertRaises(FileNotFoundError):
                 manager.load_json(path)
-
-
-

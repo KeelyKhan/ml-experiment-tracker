@@ -1,5 +1,9 @@
 import json
-from dataclasses import dataclass, asdict
+import csv
+from dataclasses import dataclass, asdict, fields
+
+FIELD_TYPES = {"model_name":str,"training_accuracy":float,"training_loss":float,"validation_accuracy":float,
+               "validation_loss":float,"epochs":int,"batch_size":int,"learning_rate":float}
 
 @dataclass
 class Model:
@@ -70,3 +74,12 @@ class ModelManager:
         for run in runs:
             new_runs.append(Model(**run))
         self.models = new_runs
+
+    def save_csv(self,path):
+        names = [field.name for field in fields(Model)]
+        with open(path,"w",encoding="utf-8",newline="") as f:
+            writer = csv.DictWriter(f,fieldnames=names)
+            writer.writeheader()
+            for model in self.models:
+                writer.writerow(asdict(model))
+                
