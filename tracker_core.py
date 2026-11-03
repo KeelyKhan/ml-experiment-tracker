@@ -63,6 +63,11 @@ class ModelManager:
         else:
             raise TypeError("Please enter a valid model run")
 
+    def delete_model(self,run_id):
+        if run_id not in self.models.keys():
+            raise KeyError("A model with this key doesnt exist")
+        del self.models[run_id]
+
     def get_models(self):
         return self.models.copy()
 
