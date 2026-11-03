@@ -63,8 +63,7 @@ class TestModelManager(unittest.TestCase):
         manager.add_model(r1)
         manager.add_model(r2)
         runs = manager.get_models()
-        self.assertIn(r1,runs)
-        self.assertIn(r2,runs)
+        self.assertEqual({1:r1,2:r2},runs)
         self.assertEqual(len(runs),2)
 
     def test_invalid_run_in_manager(self):
@@ -75,7 +74,7 @@ class TestModelManager(unittest.TestCase):
         manager = ModelManager()
         manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
         runs = manager.get_models()
-        runs.append(Model("ResNet16",99.7,0.017,98.6,0.018,10,32,0.015))
+        runs[2] = Model("ResNet16",99.7,0.017,98.6,0.018,10,32,0.015)
         runs = manager.get_models()
         self.assertEqual(len(runs),1)
 
@@ -115,7 +114,7 @@ class TestLoadSave(unittest.TestCase):
             with self.assertRaises(ValueError):
                 manager.load_json(path)
 
-            self.assertEqual([original_run],manager.get_models())
+            self.assertEqual({1:original_run},manager.get_models())
 
     def test_json_file_not_found(self):
         manager = ModelManager()
@@ -147,7 +146,7 @@ class TestLoadSave(unittest.TestCase):
                 f.write("ResNet18,abc,0.017,98.6,0.018,10,32,0.015\n")
             with self.assertRaises(ValueError):
                 manager.load_csv(path)
-            self.assertEqual([original_run],manager.get_models())
+            self.assertEqual({1:original_run},manager.get_models())
 
     def test_csv_file_not_found(self):
         manager = ModelManager()
@@ -167,4 +166,47 @@ class TestLoadSave(unittest.TestCase):
                 f.write("ResNet18,150,0.017,98.6,0.018,10,32,0.015\n")
             with self.assertRaises(ValueError):
                 manager.load_csv(path)
-            self.assertEqual([original_run],manager.get_models())
+            self.assertEqual({1:original_run},manager.get_models())
+
+    def test_runs_ids_increment(self):
+        manager = ModelManager()
+        id1 = manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
+        id2 = manager.add_model(Model("VGG16",99.7,0.017,98.6,0.018,10,32,0.015))
+        self.assertEqual(id1,1)
+        self.assertEqual(id2,2)
+
+    def test_next_id_after_load(self):
+        manager = ModelManager()
+        id1 = manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
+        id2 = manager.add_model(Model("VGG16",99.7,0.017,98.6,0.018,10,32,0.015))
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"temp.json")
+            manager.save_json(path)
+            new_manager = ModelManager()
+            new_manager.load_json(path)
+            id3 = new_manager.add_model(Model("VGG19",99.7,0.017,98.6,0.018,10,32,0.015))
+            self.assertEqual(id3,3)
+
+    def test_failed_load_keeps_next_id(self):
+        manager = ModelManager()
+        manager.add_model(Model("ResNet32",99.7,0.017,98.6,0.018,10,32,0.015))
+        with tempfile.TemporaryDirectory() as folder:
+            path = os.path.join(folder,"bad.json")
+            with open(path,"w",encoding="utf-8") as f:
+                json.dump(
+                            [
+                                {
+                                    "model_name": "ResNet18",
+                                    "training_accuracy": 150,
+                                    "training_loss": 0.12,
+                                    "validation_accuracy": 87.5,
+                                    "validation_loss": 0.15,
+                                    "epochs": 10,
+                                    "batch_size": 32,
+                                    "learning_rate": 0.01
+                                }
+                             ], f)
+            with self.assertRaises(ValueError):
+                manager.load_json(path)
+            id2 = manager.add_model(Model("VGG19",99.7,0.017,98.6,0.018,10,32,0.015))
+            self.assertEqual(id2,2)

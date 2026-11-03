@@ -51,45 +51,55 @@ class Model:
 
 class ModelManager:
     def __init__(self):
-        self.models = []
+        self.models = {}
+        self.next_id = 1
 
     def add_model(self,model):
         if isinstance(model,Model):
-            self.models.append(model)
+            run_id = self.next_id
+            self.models[run_id] = model
+            self.next_id += 1
+            return run_id
         else:
             raise TypeError("Please enter a valid model run")
 
     def get_models(self):
-        return self.models[:]
+        return self.models.copy()
 
     def save_json(self,path):
-        runs = [asdict(model) for model in self.models]
-        with open(path,"w", encoding = "utf-8") as f:
-            json.dump(runs, f, indent = 4)
+        runs = [asdict(model) for model in self.models.values()]
+        with open(path,"w",encoding="utf-8") as f:
+            json.dump(runs,f,indent=4)
 
     def load_json(self,path):
+        counter = 1
+        temp_models = {}
         with open(path,"r",encoding="utf-8") as f:
             runs = json.load(f)
-        new_runs = []
         for run in runs:
-            new_runs.append(Model(**run))
-        self.models = new_runs
+            temp_models[counter] = (Model(**run))
+            counter += 1
+        self.models = temp_models
+        self.next_id = counter
 
     def save_csv(self,path):
         names = [field.name for field in fields(Model)]
         with open(path,"w",encoding="utf-8",newline="") as f:
             writer = csv.DictWriter(f,fieldnames=names)
             writer.writeheader()
-            for model in self.models:
+            for model in self.models.values():
                 writer.writerow(asdict(model))
 
     def load_csv(self,path):
-        new_models = []
+        new_models = {}
+        counter = 1
         with open(path,"r",newline="",encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 converted_run = {key:FIELD_TYPES[key](value) for key,value in row.items()}
-                new_models.append(Model(**converted_run))
+                new_models[counter] = Model(**converted_run)
+                counter += 1 
         self.models = new_models
+        self.next_id = counter
 
                 
