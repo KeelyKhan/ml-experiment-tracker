@@ -82,4 +82,14 @@ class ModelManager:
             writer.writeheader()
             for model in self.models:
                 writer.writerow(asdict(model))
+
+    def load_csv(self,path):
+        new_models = []
+        with open(path,"r",newline="",encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                converted_run = {key:FIELD_TYPES[key](value) for key,value in row.items()}
+                new_models.append(Model(**converted_run))
+        self.models = new_models
+
                 
