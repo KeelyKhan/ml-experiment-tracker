@@ -63,6 +63,18 @@ class ModelManager:
         else:
             raise TypeError("Please enter a valid model run")
 
+    def delete_model(self,run_id):
+        if run_id not in self.models.keys():
+            raise KeyError(f"A model with ID {run_id} doesn't exist")
+        del self.models[run_id]
+
+    def update_model(self,run_id,new_model):
+        if not isinstance(new_model,Model):
+            raise TypeError("Please enter a valid model run")
+        if run_id not in self.models.keys():
+            raise KeyError(f"A model with ID {run_id} doesn't exist")
+        self.models[run_id] = new_model
+
     def get_models(self):
         return self.models.copy()
 

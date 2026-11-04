@@ -210,3 +210,41 @@ class TestLoadSave(unittest.TestCase):
                 manager.load_json(path)
             id2 = manager.add_model(Model("VGG19",99.7,0.017,98.6,0.018,10,32,0.015))
             self.assertEqual(id2,2)
+
+class TestEditDelete(unittest.TestCase):
+    def setUp(self):
+        self.run1 = Model("ResNet18",98.5,0.012,97.6,0.015,10,32,0.01)
+        self.run2 = Model("VGG19",98.5,0.012,97.6,0.015,10,32,0.01)
+        self.manager = ModelManager()
+        self.id1 = self.manager.add_model(self.run1)
+        self.id2 = self.manager.add_model(self.run2)
+
+    def test_delete_an_id(self):
+        self.manager.delete_model(self.id1)
+        self.assertEqual(self.manager.get_models(),{self.id2:self.run2})
+
+    def test_delete_missing_id(self):
+        with self.assertRaises(KeyError):
+            self.manager.delete_model(99)
+
+    def test_id_not_reused(self):
+        self.manager.delete_model(self.id2)
+        run3 = Model("AlexNet",98.5,0.012,97.6,0.015,10,32,0.01)
+        id3 = self.manager.add_model(run3)
+        self.assertEqual(id3,3)
+
+    def test_update_existing_id(self):
+        new_run = Model("AlexNet14",98.5,0.012,97.6,0.015,10,32,0.01)
+        self.manager.update_model(self.id1,new_run)
+        self.assertEqual(self.manager.get_models(),{self.id1:new_run,self.id2:self.run2})
+
+    def test_edit_invalid_run_id(self):
+        invalid_id = 99
+        with self.assertRaises(KeyError):
+            self.manager.update_model(invalid_id,self.run1)
+
+    def test_edit_non_Model_object(self):
+        invalid_run = "not a run"
+        with self.assertRaises(TypeError):
+            self.manager.update_model(self.id1,invalid_run)
+        self.assertEqual(self.manager.get_models(),{self.id1: self.run1, self.id2: self.run2})
