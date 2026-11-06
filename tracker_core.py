@@ -151,4 +151,10 @@ class ModelManager:
         self.models = new_models
         self.next_id = counter
 
-                
+    def sort_runs(self,metric):
+        if metric not in ("validation_accuracy","validation_loss"):
+            raise ValueError("Please enter either Validation Accuracy or Validation Loss")
+        reversed = True if metric == "validation_accuracy" else False
+        runs = list(self.get_models().items())
+        sorted_runs = merge_sort(items=runs,key=lambda x: getattr(x[1],metric),reverse=reversed)
+        return sorted_runs
