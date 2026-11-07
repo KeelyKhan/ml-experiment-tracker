@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import os
 import json
-from tracker_core import Model, ModelManager
+from tracker_core import Model, ModelManager, merge_sort, merge
 
 class TestModels(unittest.TestCase):
 
@@ -248,3 +248,64 @@ class TestEditDelete(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.manager.update_model(self.id1,invalid_run)
         self.assertEqual(self.manager.get_models(),{self.id1: self.run1, self.id2: self.run2})
+
+class TestMergeSort(unittest.TestCase):
+
+    TEST_LISTS = [[5, 2, 8, 1], [], [3], [2, 2, 1], [1, 2, 3], [3, 2, 1]]
+    DATA = [("a", 3), ("b", 1), ("c", 2)]
+    REPEATED_DATA = [[("a", 2), ("b", 1), ("c", 2), ("d", 1)]]
+
+    def test_matches_sorted(self): 
+        for data in self.TEST_LISTS:
+            with self.subTest(data=data):
+                self.assertEqual(merge_sort(data),sorted(data))
+
+    def test_matches_reverse_sorted(self):
+        for data in self.TEST_LISTS:
+            with self.subTest(data=data):
+                self.assertEqual(merge_sort(data,reverse=True),sorted(data,reverse=True))
+
+    def test_sort_with_key(self):
+        self.assertEqual(merge_sort(self.DATA,key=lambda x: x[1]),sorted(self.DATA,key=lambda x: x[1]))
+
+    def test_sort_is_stable(self):
+        self.assertEqual(merge_sort(self.REPEATED_DATA,key=lambda x: x[1]),sorted(self.REPEATED_DATA,key=lambda x:x[1]))
+        self.assertEqual(merge_sort(self.REPEATED_DATA,key=lambda x: x[1],reverse=True),sorted(self.REPEATED_DATA,key=lambda x:x[1],reverse=True))
+
+    def test_merge_sort_doesnt_modify_original(self):
+        data = [5,2,8,1]
+        copy_of_data = data.copy()
+        merge_sort(data)
+        self.assertEqual(data,copy_of_data)
+
+class TestSortRuns(unittest.TestCase):
+
+    def setUp(self):
+        self.manager = ModelManager()
+        self.id1 = self.manager.add_model(Model("ResNet18",98.7,0.015,99.9,0.018,10,32,0.01))
+        self.id2 = self.manager.add_model(Model("ResNet32",98.7,0.015,89.4,0.028,10,32,0.01))
+        self.id3 = self.manager.add_model(Model("ResNet19",98.7,0.015,98.7,0.048,10,32,0.01))
+
+    def test_sort_by_accuracy_high_to_low(self):
+        results = self.manager.sort_runs("validation_accuracy")
+        ids = [pair[0] for pair in results]
+        self.assertEqual(ids,[self.id1,self.id3,self.id2])
+
+    def test_sort_by_loss_low_to_high(self):
+        results = self.manager.sort_runs("validation_loss")
+        ids = [pair[0] for pair in results]
+        self.assertEqual(ids,[self.id1,self.id2,self.id3])
+
+    def test_invalid_metric_raises_an_error(self):
+        with self.assertRaises(ValueError):
+            self.manager.sort_runs("training_accuracy")
+
+    def test_manager_unchanged_after_sorting(self):
+        runs = self.manager.get_models()
+        self.manager.sort_runs("validation_accuracy")
+        self.assertEqual(list(runs.items()),list(self.manager.get_models().items()))
+
+
+
+
+
