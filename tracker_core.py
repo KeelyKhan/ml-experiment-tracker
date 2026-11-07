@@ -158,3 +158,22 @@ class ModelManager:
         runs = list(self.get_models().items())
         sorted_runs = merge_sort(items=runs,key=lambda x: getattr(x[1],metric),reverse=reversed)
         return sorted_runs
+
+    def filter_by_accuracy(self,threshold):
+        if not isinstance(threshold,(float,int)) or not 0 <= threshold <= 100:
+            raise ValueError("Please enter a valid accuracy threshold")
+        filtered_runs = [(run_id,run) for run_id,run in self.models.items() if run.validation_accuracy >= threshold]
+        return filtered_runs
+
+    
+    def filter_by_loss(self,threshold):
+        if not isinstance(threshold,(float,int)) or not threshold >= 0:
+            raise ValueError("Please enter a valid loss threshold")
+        filtered_runs = [(run_id,run) for run_id,run in self.models.items() if run.validation_loss <= threshold]
+        return filtered_runs
+
+    def filter_by_name(self,name):
+        if not isinstance(name,str) or not name.strip():
+            raise ValueError("Please enter a valid model name")
+        filtered_runs = [(run_id,run) for run_id,run in self.models.items() if name.strip().lower() in run.model_name.lower()]
+        return filtered_runs
