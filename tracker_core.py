@@ -42,6 +42,19 @@ def merge_sort(items,key=lambda x: x,reverse=False):
     result = merge(left_half,right_half,key,reverse)
     return result
 
+def mean(values):
+    if not values:
+        raise ValueError("Mean cannot be computed on empty list")
+    return sum(values)/len(values)
+
+def variance(values):
+    avg = mean(values)
+    squared_diffs = [(value - avg) ** 2 for value in values]
+    return mean(squared_diffs)
+
+def std_dev(values):
+    return (variance(values))**0.5
+
 @dataclass
 class Model:
     model_name: str
