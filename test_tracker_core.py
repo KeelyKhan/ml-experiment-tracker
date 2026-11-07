@@ -305,7 +305,67 @@ class TestSortRuns(unittest.TestCase):
         self.manager.sort_runs("validation_accuracy")
         self.assertEqual(list(runs.items()),list(self.manager.get_models().items()))
 
+class TestFilter(unittest.TestCase):
 
+    INVALID_ACCURACY_THRESHOLDS = [150,-1,"abc"]
+    INVALID_LOSS_THRESHOLDS = [-1,"ABC"]
+    INVALID_NAMES = ["", "   "]
 
+    def setUp(self):
+        self.manager = ModelManager()
+        self.id1 = self.manager.add_model(Model("ResNet18",98.7,0.015,99.9,0.018,10,32,0.01))
+        self.id2 = self.manager.add_model(Model("ResNet32",98.7,0.015,89.4,0.028,10,32,0.01))
+        self.id3 = self.manager.add_model(Model("VGG19",98.7,0.015,98.7,0.048,10,32,0.01))
 
+    def test_filter_by_accuracy(self):
+        filtered_runs = self.manager.filter_by_accuracy(95)
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id3])
 
+    def test_filter_by_accuracy_boundary(self):
+        filtered_runs = self.manager.filter_by_accuracy(98.7)
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id3])
+
+    def test_filter_by_invalid_accuracy_threshold(self):
+        for threshold in self.INVALID_ACCURACY_THRESHOLDS:
+            with self.subTest(data=threshold):
+                with self.assertRaises(ValueError):
+                    self.manager.filter_by_accuracy(threshold)
+
+    def test_filter_by_loss(self):
+        filtered_runs = self.manager.filter_by_loss(0.03)
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id2])
+
+    def test_filter_loss_boundary(self):
+        filtered_runs = self.manager.filter_by_loss(0.028)
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id2])
+
+    
+    def test_filter_by_invalid_loss_threshold(self):
+        for threshold in self.INVALID_LOSS_THRESHOLDS:
+            with self.subTest(data=threshold):
+                with self.assertRaises(ValueError):
+                    self.manager.filter_by_loss(threshold)
+
+    def test_search_by_name_partial_match(self):
+        filtered_runs = self.manager.filter_by_name("resnet")
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id2])
+
+    def test_search_by_name_case_insensitive(self):
+        filtered_runs = self.manager.filter_by_name("RES")
+        ids = [run[0] for run in filtered_runs]
+        self.assertEqual(ids,[self.id1,self.id2])
+
+    def test_search_by_name_no_match(self):
+        filtered_runs = self.manager.filter_by_name("xyz")
+        self.assertEqual(filtered_runs,[])
+
+    def test_search_by_name_invalid_input(self):
+         for name in self.INVALID_NAMES:
+                    with self.subTest(data=name):
+                        with self.assertRaises(ValueError):
+                            self.manager.filter_by_name(name)
