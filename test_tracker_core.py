@@ -2,7 +2,8 @@ import unittest
 import tempfile
 import os
 import json
-from tracker_core import Model, ModelManager, merge_sort, merge
+from tracker_core import Model, ModelManager, merge_sort, merge,mean,variance,std_dev
+import statistics
 
 class TestModels(unittest.TestCase):
 
@@ -369,3 +370,65 @@ class TestFilter(unittest.TestCase):
                     with self.subTest(data=name):
                         with self.assertRaises(ValueError):
                             self.manager.filter_by_name(name)
+
+class TestStatistics(unittest.TestCase):
+
+    VALUE_LISTS = [[90, 95, 100], [5], [1.5, 2.5, 3.5, 4.5], [99.9, 89.4, 98.7]]
+
+    def test_mean_matches_statistics(self):
+        for values in self.VALUE_LISTS:
+            with self.subTest(data=values):
+                self.assertAlmostEqual(mean(values), statistics.mean(values))
+    
+    def test_variance_matches_statistics(self):
+        for values in self.VALUE_LISTS:
+            with self.subTest(data=values):
+                self.assertAlmostEqual(variance(values), statistics.pvariance(values))
+
+    def test_stddev_matches_statistics(self):
+        for values in self.VALUE_LISTS:
+            with self.subTest(data=values):
+                self.assertAlmostEqual(std_dev(values), statistics.pstdev(values))
+
+    def test_empty_list_raises_error(self):
+        for func in [mean,variance,std_dev]:
+            with self.subTest(data=func):
+                with self.assertRaises(ValueError):
+                    func([])
+
+    def test_single_value_has_zero_variance(self):
+        self.assertEqual(variance([5]),0)
+
+class TestGetStatistics(unittest.TestCase):
+    def setUp(self):
+        self.manager = ModelManager()
+        self.id1 = self.manager.add_model(Model("ResNet18",98.7,0.015,99.9,0.030,10,32,0.01))
+        self.id2 = self.manager.add_model(Model("ResNet32",98.7,0.015,89.4,0.050,10,32,0.01))
+        self.id3 = self.manager.add_model(Model("VGG19",98.7,0.015,98.7,0.010,10,32,0.01))
+
+    def test_accuracy_statistics(self):
+        stats = self.manager.get_statistics("validation_accuracy")
+        values = [99.9, 89.4, 98.7]
+        self.assertAlmostEqual(stats["mean"],statistics.mean(values))
+        self.assertAlmostEqual(stats["variance"],statistics.pvariance(values))
+        self.assertAlmostEqual(stats["std_dev"],statistics.pstdev(values))
+        self.assertEqual(stats["best_run_id"],self.id1)
+
+    def test_loss_statistics(self):
+        stats = self.manager.get_statistics("validation_loss")
+        values = [0.030, 0.050, 0.010]
+        self.assertAlmostEqual(stats["mean"],statistics.mean(values))
+        self.assertAlmostEqual(stats["variance"],statistics.pvariance(values))
+        self.assertAlmostEqual(stats["std_dev"],statistics.pstdev(values))
+        self.assertEqual(stats["best_run_id"],self.id3)
+
+    def test_invalid_metric_raises_error(self):
+        with self.assertRaises(ValueError):
+            self.manager.get_statistics("training_accuracy")
+
+    def test_empty_manager_raises_error(self):
+        empty_manager = ModelManager()
+        with self.assertRaises(ValueError):
+            empty_manager.get_statistics("validation_accuracy")
+
+

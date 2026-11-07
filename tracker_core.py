@@ -8,6 +8,8 @@ from dataclasses import dataclass, asdict, fields
 FIELD_TYPES = {"model_name":str,"training_accuracy":float,"training_loss":float,"validation_accuracy":float,
                "validation_loss":float,"epochs":int,"batch_size":int,"learning_rate":float}
 
+SORTABLE_METRICS = ("validation_accuracy", "validation_loss")
+
 def merge(left,right,key=lambda x: x,reverse=False):
     result = []
     i = 0
@@ -41,6 +43,19 @@ def merge_sort(items,key=lambda x: x,reverse=False):
     right_half = merge_sort(right,key,reverse)
     result = merge(left_half,right_half,key,reverse)
     return result
+
+def mean(values):
+    if not values:
+        raise ValueError("Mean cannot be computed on empty list")
+    return sum(values)/len(values)
+
+def variance(values):
+    avg = mean(values)
+    squared_diffs = [(value - avg) ** 2 for value in values]
+    return mean(squared_diffs)
+
+def std_dev(values):
+    return (variance(values))**0.5
 
 @dataclass
 class Model:
@@ -177,3 +192,18 @@ class ModelManager:
             raise ValueError("Please enter a valid model name")
         filtered_runs = [(run_id,run) for run_id,run in self.models.items() if name.strip().lower() in run.model_name.lower()]
         return filtered_runs
+
+    def get_statistics(self,metric):
+        if metric not in SORTABLE_METRICS:
+            raise ValueError("Please enter a valid metric to compute statistics")
+        if not self.models:
+            raise ValueError("No runs exist to compute statistics on")
+        values = [getattr(run,metric) for run in self.models.values()]
+        sorted_runs = self.sort_runs(metric)
+        best_run_id = sorted_runs[0][0]
+        return {
+            "mean": mean(values),
+            "variance": variance(values),
+            "std_dev": std_dev(values),
+            "best_run_id": best_run_id
+        }
