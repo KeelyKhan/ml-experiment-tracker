@@ -1,9 +1,46 @@
+# GenAI acknowledgement: I acknowledge the use of Generative AI
+# to review drafts of my work and provide feedback. All code was written by me.
+
 import json
 import csv
 from dataclasses import dataclass, asdict, fields
 
 FIELD_TYPES = {"model_name":str,"training_accuracy":float,"training_loss":float,"validation_accuracy":float,
                "validation_loss":float,"epochs":int,"batch_size":int,"learning_rate":float}
+
+def merge(left,right,key=lambda x: x,reverse=False):
+    result = []
+    i = 0
+    j = 0
+    while i < len(left)  and j < len(right):
+        if reverse:
+            if key(left[i]) >= key(right[j]):
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+        else:
+            if key(left[i]) <= key(right[j]):
+                result.append(left[i])
+                i += 1
+            else:
+                result.append(right[j])
+                j += 1
+    result.extend(left[i:])
+    result.extend(right[j:])
+    return result
+
+def merge_sort(items,key=lambda x: x,reverse=False):
+    if items == [] or len(items) <= 1:
+        return items
+    mid = len(items)//2
+    left = items[:mid]
+    right = items[mid:]
+    left_half = merge_sort(left,key,reverse)
+    right_half = merge_sort(right,key,reverse)
+    result = merge(left_half,right_half,key,reverse)
+    return result
 
 @dataclass
 class Model:
@@ -114,4 +151,10 @@ class ModelManager:
         self.models = new_models
         self.next_id = counter
 
-                
+    def sort_runs(self,metric):
+        if metric not in ("validation_accuracy","validation_loss"):
+            raise ValueError("Please enter either Validation Accuracy or Validation Loss")
+        reversed = True if metric == "validation_accuracy" else False
+        runs = list(self.get_models().items())
+        sorted_runs = merge_sort(items=runs,key=lambda x: getattr(x[1],metric),reverse=reversed)
+        return sorted_runs
