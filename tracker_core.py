@@ -1,4 +1,4 @@
-# GenAI acknowledgement: I acknowledge the use of Generative AI
+# GenAI acknowledgement: I acknowledge the use of Claude AI (Anthropic, https://claude.ai)
 # to review drafts of my work and provide feedback. All code was written by me.
 
 import json
@@ -9,6 +9,39 @@ FIELD_TYPES = {"model_name":str,"training_accuracy":float,"training_loss":float,
                "validation_loss":float,"epochs":int,"batch_size":int,"learning_rate":float}
 
 SORTABLE_METRICS = ("validation_accuracy", "validation_loss")
+
+MILD_GAP = 3
+SERIOUS_GAP = 5
+LOW_ACCURACY = 75
+HIGH_LEARNING_RATE = 0.1
+LOW_LEARNING_RATE = 0.001
+MINIMUM_EPOCHS = 5
+
+OVERFITTING_SUGGESTION = """
+ - Implement regularization techniques such as implementing dropout layer or weight decay
+ - Data augmentation
+ - Early stopping of model training
+ - Trying  a simpler model
+"""
+UNDERFITTING_SUGGESTION = """
+- Train the model for more epochs
+- Use a more advanced model
+- Reduce the regularisation
+- Increase the learning rate
+"""
+
+HIGH_LR_SUGGESTION = """
+- Lower the learning rate for stable learning
+"""
+
+LOW_LR_SUGGESTION = """
+- Increase the learning rate
+- Train for more epochs
+"""
+
+LOW_EPOCHS_SUGGESTION = """
+- Train for more epochs
+"""
 
 def merge(left,right,key=lambda x: x,reverse=False):
     result = []
@@ -56,6 +89,32 @@ def variance(values):
 
 def std_dev(values):
     return (variance(values))**0.5
+
+def get_recommendations(run):
+    recommendations = []
+    gap = run.training_accuracy - run.validation_accuracy
+    if gap > SERIOUS_GAP:
+        recommendations.append({"issue": "Overfitting (Serious)", "suggestion": OVERFITTING_SUGGESTION})
+    elif gap > MILD_GAP:
+        recommendations.append({"issue": "Overfitting (Mild)", "suggestion": OVERFITTING_SUGGESTION})
+
+    if run.training_accuracy < LOW_ACCURACY and run.validation_accuracy < LOW_ACCURACY:
+        recommendations.append({"issue": "Underfitting", "suggestion": UNDERFITTING_SUGGESTION})
+
+    if run.learning_rate > HIGH_LEARNING_RATE and run.validation_accuracy < LOW_ACCURACY:
+        recommendations.append({"issue": "Learning Rate too high", "suggestion": HIGH_LR_SUGGESTION})
+
+    if run.learning_rate < LOW_LEARNING_RATE and run.validation_accuracy < LOW_ACCURACY:
+        recommendations.append({"issue": "Learning Rate too low", "suggestion": LOW_LR_SUGGESTION})
+
+    if run.epochs < MINIMUM_EPOCHS and run.validation_accuracy < LOW_ACCURACY:
+        recommendations.append({"issue": "Too few epochs for model training", "suggestion":LOW_EPOCHS_SUGGESTION})
+
+    if not recommendations:
+        recommendations.append({"issue": "Healthy", "suggestion": "The model is healthy"})
+
+    return recommendations
+
 
 @dataclass
 class Model:
@@ -167,11 +226,11 @@ class ModelManager:
         self.next_id = counter
 
     def sort_runs(self,metric):
-        if metric not in ("validation_accuracy","validation_loss"):
+        if metric not in SORTABLE_METRICS:
             raise ValueError("Please enter either Validation Accuracy or Validation Loss")
-        reversed = True if metric == "validation_accuracy" else False
+        descending = True if metric == "validation_accuracy" else False
         runs = list(self.get_models().items())
-        sorted_runs = merge_sort(items=runs,key=lambda x: getattr(x[1],metric),reverse=reversed)
+        sorted_runs = merge_sort(items=runs,key=lambda x: getattr(x[1],metric),reverse=descending)
         return sorted_runs
 
     def filter_by_accuracy(self,threshold):
@@ -207,3 +266,8 @@ class ModelManager:
             "std_dev": std_dev(values),
             "best_run_id": best_run_id
         }
+
+    def recommend(self,run_id):
+        if run_id not in self.models.keys():
+            raise KeyError(f"A model with ID {run_id} doesn't exist")
+        return get_recommendations(self.models[run_id])
