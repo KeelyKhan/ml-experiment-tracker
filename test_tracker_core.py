@@ -478,3 +478,42 @@ class TestRecommendations(unittest.TestCase):
         issue = [r["issue"] for r in result]
         self.assertEqual(issue,["Overfitting (Mild)"])
 
+    def test_underfitting(self):
+        underfitting_run = self.make_run(training_accuracy=70,validation_accuracy=68)
+        result = get_recommendations(underfitting_run)
+        issue = [r["issue"] for r in result]
+        self.assertIn("Underfitting",issue)
+
+    def test_high_learning_rate(self):
+        high_lr_run = self.make_run(training_accuracy=72,validation_accuracy=70,learning_rate=0.2)
+        result = get_recommendations(high_lr_run)
+        issue = [r["issue"] for r in result]
+        self.assertIn("Learning Rate too high",issue)
+
+    def test_low_learning_rate(self):
+        low_lr_run = self.make_run(training_accuracy=72,validation_accuracy=70,learning_rate=0.0005)
+        result = get_recommendations(low_lr_run)
+        issue = [r["issue"] for r in result]
+        self.assertIn("Learning Rate too low",issue)
+
+    def test_too_few_epochs(self):
+        few_epochs_run = self.make_run(training_accuracy=72,validation_accuracy=70,epochs=3)
+        result = get_recommendations(few_epochs_run)
+        issue = [r["issue"] for r in result]
+        self.assertIn('Underfitting',issue)
+        self.assertIn('Too few epochs for model training',issue)
+
+    def test_underfitting_and_overfitting(self):
+        uf_and_of_run = self.make_run(training_accuracy=74,validation_accuracy=60)
+        result = get_recommendations(uf_and_of_run)
+        issue = [r["issue"] for r in result]
+        self.assertIn('Underfitting',issue)
+        self.assertIn('Overfitting (Serious)',issue)
+
+    def test_recommend_missing_id(self):
+        new_manager = ModelManager()
+        with self.assertRaises(KeyError):
+            new_manager.recommend(10)
+
+
+
