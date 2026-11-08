@@ -5,7 +5,7 @@ import unittest
 import tempfile
 import os
 import json
-from tracker_core import Model, ModelManager, merge_sort, merge,mean,variance,std_dev
+from tracker_core import Model, ModelManager, merge_sort, merge,mean,variance,std_dev,get_recommendations
 import statistics
 
 class TestModels(unittest.TestCase):
@@ -434,4 +434,47 @@ class TestGetStatistics(unittest.TestCase):
         with self.assertRaises(ValueError):
             empty_manager.get_statistics("validation_accuracy")
 
+class TestRecommendations(unittest.TestCase):
+    def make_run(self,**overrides):
+        run = {
+            "model_name":"ResNet19",
+            "training_accuracy": 95.0,
+            "training_loss": 0.012,
+            "validation_accuracy": 94.0,
+            "validation_loss": 0.018,
+            "epochs": 20,
+            "batch_size": 32,
+            "learning_rate": 0.01
+        }
+        run.update(overrides)
+        return Model(**run)
+
+    def test_healthy_run(self):
+        run = self.make_run()
+        result = get_recommendations(run)
+        issue = [r["issue"] for r in result]
+        self.assertEqual(issue,["Healthy"])
+
+    def test_mild_overfitting(self):
+        run = self.make_run(validation_accuracy=91.7)
+        result = get_recommendations(run)
+        issue = [r["issue"] for r in result]
+        self.assertEqual(issue,["Overfitting (Mild)"])
+
+    def test_serious_overfitting(self):
+        run = self.make_run(validation_accuracy=85.7)
+        result = get_recommendations(run)
+        issue = [r["issue"] for r in result]
+        self.assertEqual(issue,["Overfitting (Serious)"])
+        self.assertNotEqual(issue,["Overfitting (Mild)"])
+
+    def test_overfitting_boundaries(self):
+        healthy_run = self.make_run(validation_accuracy=92)
+        result = get_recommendations(healthy_run)
+        healthy_issue = [r["issue"] for r in result]
+        self.assertEqual(healthy_issue,["Healthy"])
+        run = self.make_run(validation_accuracy=90)
+        result = get_recommendations(run)
+        issue = [r["issue"] for r in result]
+        self.assertEqual(issue,["Overfitting (Mild)"])
 
