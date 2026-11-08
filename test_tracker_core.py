@@ -1,3 +1,6 @@
+# GenAI acknowledgement: I acknowledge the use of Claude AI (Anthropic, https://claude.ai)
+# to review drafts of my work and provide feedback. All code was written by me.
+
 import unittest
 import tempfile
 import os
