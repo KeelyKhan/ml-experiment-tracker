@@ -19,6 +19,15 @@ def print_menu():
     """
     print(menu)
 
+def print_runs(pairs):
+    if not pairs:
+        print("No runs to show")
+        return 
+    print(f"{'ID':<4}{'Name':<12}{'Train Acc':<11}{'Val Acc':<11}{'Train Loss':<11}{'Val Loss':<11}{'Epochs':<8}{'Batch':<8}{'LR':<10}")
+    for run_id,run in pairs:
+        print(f"{run_id:<4}{run.model_name:<14}{run.training_accuracy:<11.2f}{run.validation_accuracy:<11.2f}{run.training_loss:<11.2f}{run.validation_loss:<11.2f}{run.epochs:<8}{run.batch_size:<8}{run.learning_rate:<10g}")
+
+
 def main():
     manager = ModelManager()
     while True:
@@ -27,6 +36,8 @@ def main():
         if user_input == "0":
             print("Good Bye. Have a nice day")
             break
+        elif user_input == "1":
+            print_runs(list(manager.get_models().items()))
         else:
             print("Not implemented yet. Have patience")
 
