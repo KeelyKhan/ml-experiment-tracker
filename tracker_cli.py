@@ -21,7 +21,7 @@ def print_menu():
 
 def print_runs(pairs):
     if not pairs:
-        print("No runs to show")
+        print("\nNo runs added yet")
         return 
     print(f"{'ID':<4}{'Name':<14}{'Train Acc':<11}{'Val Acc':<11}{'Train Loss':<11}{'Val Loss':<11}{'Epochs':<8}{'Batch':<8}{'LR':<10}")
     for run_id,run in pairs:
@@ -48,12 +48,26 @@ def ask_int(prompt):
 def ask_text(prompt):
     while True:
         text = input(prompt).strip()
-        try:
-            result = str(text)
-            return result
-        except ValueError:
-            print("Please enter a valid number")
-
+        if not text:
+            print("This field cannot be empty")
+        else:
+            return text
+        
+def add_run(manager):
+    model_name = ask_text("Model Name: ")
+    training_accuracy = ask_float("Training Accuracy: ")
+    training_loss = ask_float("Training Loss: ")
+    validation_accuracy = ask_float("Validation Accuracy: ")
+    validation_loss = ask_float("Validation Loss: ")
+    epochs = ask_int("No of Epochs: ")
+    batch_size = ask_int("Batch Size: ")
+    learning_rate = ask_float("Learning Rate: ")
+    try:
+        run = Model(model_name,training_accuracy,training_loss,validation_accuracy,validation_loss,epochs,batch_size,learning_rate)
+        run_id = manager.add_model(run)
+        print(f"Run added with ID {run_id}")
+    except ValueError as e:
+        print(f"Could not add this run: {e}")
 
 def main():
     manager = ModelManager()
@@ -65,6 +79,8 @@ def main():
             break
         elif user_input == "1":
             print_runs(list(manager.get_models().items()))
+        elif user_input == "2":
+            add_run(manager)
         else:
             print("Not implemented yet. Have patience")
 
