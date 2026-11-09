@@ -21,7 +21,7 @@ def print_menu():
 
 def print_runs(pairs):
     if not pairs:
-        print("\nNo runs added yet")
+        print("\nNo runs to show")
         return 
     print(f"{'ID':<4}{'Name':<14}{'Train Acc':<11}{'Val Acc':<11}{'Train Loss':<11}{'Val Loss':<11}{'Epochs':<8}{'Batch':<8}{'LR':<10}")
     for run_id,run in pairs:
@@ -69,6 +69,35 @@ def add_run(manager):
     except ValueError as e:
         print(f"Could not add this run: {e}")
 
+def ask_yes_no(prompt):
+    while True:
+        text = input(prompt).strip().lower()
+        if text == "y":
+            return True
+        elif text == "n":
+            return False
+        else:
+            print("Please enter a valid option - Y for Yes, N for No")
+
+def delete_run(manager):
+    if not manager.get_models():
+        print("No runs to delete")
+        return
+    print("\nChoose a run ID to delete: ")
+    print_runs(list(manager.get_models().items()))
+    run_id = ask_int("\nEnter run ID: ")
+    decision = ask_yes_no(f"Delete run {run_id}? (y/n): ")
+    if not decision:
+        print("\nCancelled")
+        return
+    try: 
+        manager.delete_model(run_id)
+        print(f"Run {run_id} deleted successfully")
+    except KeyError:
+        print(f"No run with ID {run_id} exists")
+
+
+
 def main():
     manager = ModelManager()
     while True:
@@ -81,6 +110,8 @@ def main():
             print_runs(list(manager.get_models().items()))
         elif user_input == "2":
             add_run(manager)
+        elif user_input == "4":
+            delete_run(manager)
         else:
             print("Not implemented yet. Have patience")
 
