@@ -53,7 +53,7 @@ def ask_text(prompt):
         else:
             return text
         
-def add_run(manager):
+def ask_run_details():
     model_name = ask_text("Model Name: ")
     training_accuracy = ask_float("Training Accuracy: ")
     training_loss = ask_float("Training Loss: ")
@@ -62,8 +62,11 @@ def add_run(manager):
     epochs = ask_int("No of Epochs: ")
     batch_size = ask_int("Batch Size: ")
     learning_rate = ask_float("Learning Rate: ")
+    return Model(model_name,training_accuracy,training_loss,validation_accuracy,validation_loss,epochs,batch_size,learning_rate)
+
+def add_run(manager):
     try:
-        run = Model(model_name,training_accuracy,training_loss,validation_accuracy,validation_loss,epochs,batch_size,learning_rate)
+        run = ask_run_details()
         run_id = manager.add_model(run)
         print(f"Run added with ID {run_id}")
     except ValueError as e:
@@ -96,7 +99,22 @@ def delete_run(manager):
     except KeyError:
         print(f"No run with ID {run_id} exists")
 
-
+def update_run(manager):
+    if not manager.get_models():
+        print("No runs to update")
+        return
+    print("\nChoose a run ID to update: ")
+    print_runs(list(manager.get_models().items()))
+    run_id = ask_int("\nEnter run ID: ")
+    if run_id not in manager.get_models().keys():
+        print(f"No run with ID {run_id}")
+        return
+    try:
+        run = ask_run_details()
+        manager.update_model(run_id,run)
+        print(f"Run {run_id} updated")
+    except ValueError as e:
+        print(f"Could not update this run: {e}")
 
 def main():
     manager = ModelManager()
@@ -110,6 +128,8 @@ def main():
             print_runs(list(manager.get_models().items()))
         elif user_input == "2":
             add_run(manager)
+        elif user_input == "3":
+            update_run(manager)
         elif user_input == "4":
             delete_run(manager)
         else:
