@@ -23,9 +23,36 @@ def print_runs(pairs):
     if not pairs:
         print("No runs to show")
         return 
-    print(f"{'ID':<4}{'Name':<12}{'Train Acc':<11}{'Val Acc':<11}{'Train Loss':<11}{'Val Loss':<11}{'Epochs':<8}{'Batch':<8}{'LR':<10}")
+    print(f"{'ID':<4}{'Name':<14}{'Train Acc':<11}{'Val Acc':<11}{'Train Loss':<11}{'Val Loss':<11}{'Epochs':<8}{'Batch':<8}{'LR':<10}")
     for run_id,run in pairs:
-        print(f"{run_id:<4}{run.model_name:<14}{run.training_accuracy:<11.2f}{run.validation_accuracy:<11.2f}{run.training_loss:<11.2f}{run.validation_loss:<11.2f}{run.epochs:<8}{run.batch_size:<8}{run.learning_rate:<10g}")
+        print(f"{run_id:<4}{run.model_name:<14}{run.training_accuracy:<11.2f}{run.validation_accuracy:<11.2f}{run.training_loss:<11.4f}{run.validation_loss:<11.4f}{run.epochs:<8}{run.batch_size:<8}{run.learning_rate:<10g}")
+
+def ask_float(prompt):
+    while True:
+        text = input(prompt)
+        try:
+            result = float(text)
+            return result
+        except ValueError:
+            print("Please enter a valid number")
+
+def ask_int(prompt):
+    while True:
+        text = input(prompt)
+        try:
+            result = int(text)
+            return result
+        except ValueError:
+            print("Please enter a whole number")
+
+def ask_text(prompt):
+    while True:
+        text = input(prompt).strip()
+        try:
+            result = str(text)
+            return result
+        except ValueError:
+            print("Please enter a valid number")
 
 
 def main():
