@@ -172,6 +172,39 @@ Choose an option for filter:
     else:
         print("Please enter a valid choice")
 
+def show_statistics_menu(manager):
+    if not manager.get_models():
+        print("No runs exist to compute statistics")
+        return
+    message = """
+Choose a metric to compute stats:
+1. Validation Accuracy
+2. Validation Loss
+""" 
+    print(message)
+    choice = input("Enter your choice: ").strip()
+    if choice == "1":
+        metric = "validation_accuracy"
+        label = "Validation Accuracy"
+    elif choice == "2":
+        metric = "validation_loss"
+        label = "Validation Loss"
+    else:
+        print("Please enter a valid option")
+        return
+    
+    results = manager.get_statistics(metric)
+    best_id = results['best_run_id']
+    best_name = manager.get_models()[best_id].model_name
+    stats = f"""
+Statistics of {label}:
+Mean: {results['mean']:.4f}
+Variance: {results['variance']:.4f}
+Standard Deviation: {results['std_dev']:.4f}
+Best Run ID: {best_id} ({best_name})
+"""
+    print(stats)
+
 
 
 def main():
@@ -194,6 +227,8 @@ def main():
             sort_runs_menu(manager)
         elif user_input == "6":
             filter_runs_menu(manager)
+        elif user_input == "7":
+            show_statistics_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
