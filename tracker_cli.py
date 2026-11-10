@@ -264,18 +264,22 @@ Choose the loading format:
         return
     else:
         path = ask_text("\nFile Name: ")
-        if choice == "1":
+        if load_choice == "1":
             try:
                 manager.load_json(path)
                 print(f"Loaded {len(manager.get_models())} runs")
             except FileNotFoundError:
                 print("File Not Found")
-        elif choice == "2":
+            except (ValueError, KeyError, TypeError) as e:
+                print(f"Could not load file: {e}")
+        elif load_choice == "2":
             try:
                 manager.load_csv(path)
                 print(f"Loaded {len(manager.get_models())} runs")
             except FileNotFoundError:
                 print("File Not Found")
+            except (ValueError, KeyError, TypeError) as e:
+                print(f"Could not load file: {e}")
 
 
 def main():
@@ -307,7 +311,7 @@ def main():
         elif user_input == "10":
             load_runs_menu(manager)
         else:
-            print("Not implemented yet. Have patience")
+            print("Enter a valid choice")
 
 
 if __name__ == "__main__":
