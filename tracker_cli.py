@@ -116,6 +116,29 @@ def update_run(manager):
     except ValueError as e:
         print(f"Could not update this run: {e}")
 
+def sort_runs_menu(manager):
+    if not manager.get_models():
+        print("No runs to sort")
+        return
+    message = """
+\nHow do you want to sort your runs
+  1. Validation accuracy (high to low)
+  2. Validation loss (low to high)
+"""
+    print(message)
+    choice = input("Choice 1 or 2: ").strip()
+    if choice == "1":
+        sorted_runs = manager.sort_runs("validation_accuracy")
+        print_runs(sorted_runs)
+    elif choice == "2":
+        sorted_runs = manager.sort_runs("validation_loss")
+        print_runs(sorted_runs)
+    else:
+        print("Please enter a valid choice number")
+    
+
+
+
 def main():
     manager = ModelManager()
     while True:
@@ -132,6 +155,8 @@ def main():
             update_run(manager)
         elif user_input == "4":
             delete_run(manager)
+        elif user_input == "5":
+            sort_runs_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
