@@ -221,6 +221,29 @@ def show_recommendations_menu(manager):
     except KeyError:
         print(f"No run with ID {run_id} exists")
         
+def save_runs_menu(manager):
+    if not manager.get_models():
+        print("No runs to save")
+        return
+    message = """
+How do you want to save your runs: 
+1. JSON
+2. CSV
+"""
+    print(message)
+    save_option = input("\nEnter your choice: ").strip()
+    path = ask_text("\nFile Name: ")
+    try:
+        if save_option == "1":
+            manager.save_json(path)
+        elif save_option == "2":
+            manager.save_csv(path)
+        else:
+            print("Enter a valid option")
+            return
+        print(f"\nSaved {len(manager.get_models())} runs")
+    except OSError as e:
+        print("Could not save the file")
 
 
 
@@ -248,6 +271,8 @@ def main():
             show_statistics_menu(manager)
         elif user_input == "8":
             show_recommendations_menu(manager)
+        elif user_input == "9":
+            save_runs_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
