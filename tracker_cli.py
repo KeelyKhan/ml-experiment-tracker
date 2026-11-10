@@ -232,17 +232,18 @@ How do you want to save your runs:
 """
     print(message)
     save_option = input("\nEnter your choice: ").strip()
-    path = ask_text("\nFile Name: ")
     try:
         if save_option == "1":
+            path = ask_text("\nFile Name: ")
             manager.save_json(path)
         elif save_option == "2":
+            path = ask_text("\nFile Name: ")
             manager.save_csv(path)
         else:
             print("Enter a valid option")
             return
         print(f"\nSaved {len(manager.get_models())} runs")
-    except OSError as e:
+    except OSError:
         print("Could not save the file")
 
 
