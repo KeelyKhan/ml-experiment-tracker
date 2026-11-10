@@ -69,8 +69,10 @@ def add_run(manager):
         run = ask_run_details()
         run_id = manager.add_model(run)
         print(f"Run added with ID {run_id}")
+        return True
     except ValueError as e:
         print(f"Could not add this run: {e}")
+        return False
 
 def ask_yes_no(prompt):
     while True:
@@ -85,36 +87,40 @@ def ask_yes_no(prompt):
 def delete_run(manager):
     if not manager.get_models():
         print("No runs to delete")
-        return
+        return False
     print("\nChoose a run ID to delete: ")
     print_runs(list(manager.get_models().items()))
     run_id = ask_int("\nEnter run ID: ")
     decision = ask_yes_no(f"Delete run {run_id}? (y/n): ")
     if not decision:
         print("\nCancelled")
-        return
-    try: 
+        return False
+    try:
         manager.delete_model(run_id)
         print(f"Run {run_id} deleted successfully")
+        return True
     except KeyError:
         print(f"No run with ID {run_id} exists")
+        return False
 
 def update_run(manager):
     if not manager.get_models():
         print("No runs to update")
-        return
+        return False
     print("\nChoose a run ID to update: ")
     print_runs(list(manager.get_models().items()))
     run_id = ask_int("\nEnter run ID: ")
     if run_id not in manager.get_models().keys():
         print(f"No run with ID {run_id}")
-        return
+        return False
     try:
         run = ask_run_details()
         manager.update_model(run_id,run)
         print(f"Run {run_id} updated")
+        return True
     except ValueError as e:
         print(f"Could not update this run: {e}")
+        return False
 
 def sort_runs_menu(manager):
     if not manager.get_models():
@@ -224,7 +230,7 @@ def show_recommendations_menu(manager):
 def save_runs_menu(manager):
     if not manager.get_models():
         print("No runs to save")
-        return
+        return False
     message = """
 How do you want to save your runs: 
 1. JSON
@@ -241,10 +247,12 @@ How do you want to save your runs:
             manager.save_csv(path)
         else:
             print("Enter a valid option")
-            return
+            return False
         print(f"\nSaved {len(manager.get_models())} runs")
+        return True
     except OSError:
         print("Could not save the file")
+        return False
 
 def load_runs_menu(manager):
     message = """
@@ -256,48 +264,49 @@ Choose the loading format:
        choice = ask_yes_no("Loading will replace your current runs. Continue? (y/n): ")
        if not choice:
            print("Cancelled")
-           return
+           return False
     print(message)
     load_choice = input("\nEnter your choice: ").strip()
     if load_choice not in ("1","2"):
         print("Invalid Choice")
-        return
-    else:
-        path = ask_text("\nFile Name: ")
+        return False
+    path = ask_text("\nFile Name: ")
+    try:
         if load_choice == "1":
-            try:
-                manager.load_json(path)
-                print(f"Loaded {len(manager.get_models())} runs")
-            except FileNotFoundError:
-                print("File Not Found")
-            except (ValueError, KeyError, TypeError) as e:
-                print(f"Could not load file: {e}")
-        elif load_choice == "2":
-            try:
-                manager.load_csv(path)
-                print(f"Loaded {len(manager.get_models())} runs")
-            except FileNotFoundError:
-                print("File Not Found")
-            except (ValueError, KeyError, TypeError) as e:
-                print(f"Could not load file: {e}")
+            manager.load_json(path)
+        else:
+            manager.load_csv(path)
+        print(f"Loaded {len(manager.get_models())} runs")
+        return True
+    except FileNotFoundError:
+        print("File Not Found")
+    except (ValueError, KeyError, TypeError) as e:
+        print(f"Could not load file: {e}")
+    return False
 
 
 def main():
     manager = ModelManager()
+    unsaved_changes = False
     while True:
         print_menu()
         user_input = input("Choose an option: ").strip()
         if user_input == "0":
+            if unsaved_changes and ask_yes_no("You have unsaved changes. Save before quitting? (y/n): "):
+                save_runs_menu(manager)
             print("Good Bye. Have a nice day")
             break
         elif user_input == "1":
             print_runs(list(manager.get_models().items()))
         elif user_input == "2":
-            add_run(manager)
+            if add_run(manager):
+                unsaved_changes = True
         elif user_input == "3":
-            update_run(manager)
+            if update_run(manager):
+                unsaved_changes = True
         elif user_input == "4":
-            delete_run(manager)
+            if delete_run(manager):
+                unsaved_changes = True
         elif user_input == "5":
             sort_runs_menu(manager)
         elif user_input == "6":
@@ -307,9 +316,11 @@ def main():
         elif user_input == "8":
             show_recommendations_menu(manager)
         elif user_input == "9":
-            save_runs_menu(manager)
+            if save_runs_menu(manager):
+                unsaved_changes = False
         elif user_input == "10":
-            load_runs_menu(manager)
+            if load_runs_menu(manager):
+                unsaved_changes = True
         else:
             print("Enter a valid choice")
 
