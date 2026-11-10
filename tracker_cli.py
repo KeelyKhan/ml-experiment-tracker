@@ -135,7 +135,42 @@ def sort_runs_menu(manager):
         print_runs(sorted_runs)
     else:
         print("Please enter a valid choice number")
-    
+
+def filter_runs_menu(manager):
+    if not manager.get_models():
+        print("No runs to filter")
+        return
+    message = """
+Choose an option for filter: 
+1. Validation Accuracy
+2. Validation Loss
+3. Model Name
+"""  
+    print(message)
+    choice = input("\nEnter your choice: ").strip()
+    if choice == "1":
+        val_acc = ask_float("\nMinimum validation accuracy (0-100): ")
+        try:
+            result = manager.filter_by_accuracy(val_acc)
+            print_runs(result)
+        except ValueError as e:
+            print(f"Enter a valid threshold: {e}")
+    elif choice == "2":
+        val_loss = ask_float("\nMaximum validation loss: ")
+        try:
+            result = manager.filter_by_loss(val_loss)
+            print_runs(result)
+        except ValueError as e:
+            print(f"Enter a valid threshold: {e}")
+    elif choice == "3":
+        model = ask_text("\nEnter Model Name: ")
+        try:
+            result = manager.filter_by_name(model)
+            print_runs(result)
+        except ValueError as e:
+            print(f"Enter a valid model name: {e}")
+    else:
+        print("Please enter a valid choice")
 
 
 
@@ -157,6 +192,8 @@ def main():
             delete_run(manager)
         elif user_input == "5":
             sort_runs_menu(manager)
+        elif user_input == "6":
+            filter_runs_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
