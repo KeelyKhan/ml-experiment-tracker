@@ -453,7 +453,7 @@ class TestRecommendations(unittest.TestCase):
         run = self.make_run()
         result = get_recommendations(run)
         issue = [r["issue"] for r in result]
-        self.assertEqual(issue,["Healthy"])
+        self.assertEqual(issue,["No issue"])
 
     def test_mild_overfitting(self):
         run = self.make_run(validation_accuracy=91.7)
@@ -472,7 +472,7 @@ class TestRecommendations(unittest.TestCase):
         healthy_run = self.make_run(validation_accuracy=92)
         result = get_recommendations(healthy_run)
         healthy_issue = [r["issue"] for r in result]
-        self.assertEqual(healthy_issue,["Healthy"])
+        self.assertEqual(healthy_issue,["No issue"])
         run = self.make_run(validation_accuracy=90)
         result = get_recommendations(run)
         issue = [r["issue"] for r in result]
