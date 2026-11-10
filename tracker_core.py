@@ -111,7 +111,7 @@ def get_recommendations(run):
         recommendations.append({"issue": "Too few epochs for model training", "suggestion":LOW_EPOCHS_SUGGESTION})
 
     if not recommendations:
-        recommendations.append({"issue": "Healthy", "suggestion": "The model is healthy"})
+        recommendations.append({"issue": "No issue", "suggestion": "The model is healthy"})
 
     return recommendations
 

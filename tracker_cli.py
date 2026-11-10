@@ -205,6 +205,23 @@ Best Run ID: {best_id} ({best_name})
 """
     print(stats)
 
+def show_recommendations_menu(manager):
+    if not manager.get_models():
+        print("No runs exist to form recommendations")
+        return
+    print("Choose a run to show recommendations for: ")
+    print_runs(list(manager.get_models().items()))
+    run_id = ask_int("\nEnter Run ID: ")
+    try:
+        results = manager.recommend(run_id)
+        print(f"Recommendations for Run {run_id} ({manager.get_models()[run_id].model_name})\n")
+        for result in results:
+            print("Issue: ",result["issue"])
+            print("\nSuggestions: ",result["suggestion"])
+    except KeyError:
+        print(f"No run with ID {run_id} exists")
+        
+
 
 
 def main():
@@ -229,6 +246,8 @@ def main():
             filter_runs_menu(manager)
         elif user_input == "7":
             show_statistics_menu(manager)
+        elif user_input == "8":
+            show_recommendations_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
