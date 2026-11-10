@@ -246,6 +246,36 @@ How do you want to save your runs:
     except OSError:
         print("Could not save the file")
 
+def load_runs_menu(manager):
+    message = """
+Choose the loading format:
+1. JSON
+2. CSV
+"""
+    if manager.get_models():
+       choice = ask_yes_no("Loading will replace your current runs. Continue? (y/n): ")
+       if not choice:
+           print("Cancelled")
+           return
+    print(message)
+    load_choice = input("\nEnter your choice: ").strip()
+    if load_choice not in ("1","2"):
+        print("Invalid Choice")
+        return
+    else:
+        path = ask_text("\nFile Name: ")
+        if choice == "1":
+            try:
+                manager.load_json(path)
+                print(f"Loaded {len(manager.get_models())} runs")
+            except FileNotFoundError:
+                print("File Not Found")
+        elif choice == "2":
+            try:
+                manager.load_csv(path)
+                print(f"Loaded {len(manager.get_models())} runs")
+            except FileNotFoundError:
+                print("File Not Found")
 
 
 def main():
@@ -274,6 +304,8 @@ def main():
             show_recommendations_menu(manager)
         elif user_input == "9":
             save_runs_menu(manager)
+        elif user_input == "10":
+            load_runs_menu(manager)
         else:
             print("Not implemented yet. Have patience")
 
