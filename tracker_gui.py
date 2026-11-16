@@ -20,7 +20,7 @@ class TrackerApp:
 
         left = ttk.Frame(self.root)
         left.grid(row=0, column=0, sticky="ns", padx=10, pady=(30, 0))
-        commands = {"Add": self.open_run_form, "Delete": self.delete_selected}
+        commands = {"Add": self.open_run_form, "Edit": self.edit_selected, "Delete": self.delete_selected}
         for text in ("Add", "Edit", "Delete", "Save", "Load"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
@@ -45,9 +45,9 @@ class TrackerApp:
 
         self.refresh_table(list(self.manager.get_models().items()))
 
-    def open_run_form(self):
+    def open_run_form(self, run_id=None):
         window = tk.Toplevel(self.root)
-        window.title("Add a Run")
+        window.title("Add a Run" if run_id is None else "Edit Run")
 
         labels = ("Model Name", "Training Accuracy", "Training Loss", "Validation Accuracy",
                   "Validation Loss", "Epochs", "Batch Size", "Learning Rate")
@@ -57,6 +57,14 @@ class TrackerApp:
             entry = ttk.Entry(window)
             entry.grid(row=row, column=1, padx=10, pady=5)
             entries.append(entry)
+
+        if run_id is not None:
+            existing = self.manager.get_models()[run_id]
+            values = (existing.model_name, existing.training_accuracy, existing.training_loss,
+                      existing.validation_accuracy, existing.validation_loss, existing.epochs,
+                      existing.batch_size, existing.learning_rate)
+            for i, value in enumerate(values):
+                entries[i].insert(0, value)
 
         def save():
             try:
@@ -71,15 +79,29 @@ class TrackerApp:
                 run = Model(model_name, training_accuracy, training_loss, validation_accuracy,
                             validation_loss, epochs, batch_size, learning_rate)
             except ValueError as e:
-                messagebox.showerror("Invalid input", f"Could not add this run: {e}", parent=window)
+                messagebox.showerror("Invalid input", f"Could not save this run: {e}", parent=window)
                 return
-            run_id = self.manager.add_model(run)
+            if run_id is None:
+                new_id = self.manager.add_model(run)
+                message = f"Run added with ID {new_id}"
+            else:
+                self.manager.update_model(run_id, run)
+                message = f"Run {run_id} updated"
             self.refresh_table(list(self.manager.get_models().items()))
             self.unsaved_changes = True
-            self.status.config(text=f"Run added with ID {run_id}")
+            self.status.config(text=message)
             window.destroy()
 
         ttk.Button(window, text="Save", command=save).grid(row=len(labels), column=0, columnspan=2, pady=10)
+
+    def edit_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showerror("No selection", "Please select a run to edit.")
+            return
+        values = self.tree.item(selected[0], "values")
+        run_id = int(values[0])
+        self.open_run_form(run_id)
 
     def delete_selected(self):
         selected = self.tree.selection()
