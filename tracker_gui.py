@@ -20,7 +20,7 @@ class TrackerApp:
 
         left = ttk.Frame(self.root)
         left.grid(row=0, column=0, sticky="ns", padx=10, pady=(30, 0))
-        commands = {"Add": self.open_run_form}
+        commands = {"Add": self.open_run_form, "Delete": self.delete_selected}
         for text in ("Add", "Edit", "Delete", "Save", "Load"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
@@ -80,6 +80,20 @@ class TrackerApp:
             window.destroy()
 
         ttk.Button(window, text="Save", command=save).grid(row=len(labels), column=0, columnspan=2, pady=10)
+
+    def delete_selected(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showerror("No selection", "Please select a run to delete.")
+            return
+        values = self.tree.item(selected[0], "values")
+        run_id = int(values[0])
+        if not messagebox.askyesno("Delete run", f"Delete run {run_id}?"):
+            return
+        self.manager.delete_model(run_id)
+        self.refresh_table(list(self.manager.get_models().items()))
+        self.unsaved_changes = True
+        self.status.config(text=f"Run {run_id} deleted")
 
     def refresh_table(self, pairs):
         for item in self.tree.get_children():
