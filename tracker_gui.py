@@ -2,7 +2,7 @@
 # to review drafts of my work and provide feedback. All code was written by me.
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from tracker_core import Model, ModelManager
 
 class TrackerApp:
@@ -20,7 +20,8 @@ class TrackerApp:
 
         left = ttk.Frame(self.root)
         left.grid(row=0, column=0, sticky="ns", padx=10, pady=(30, 0))
-        commands = {"Add": self.open_run_form, "Edit": self.edit_selected, "Delete": self.delete_selected}
+        commands = {"Add": self.open_run_form, "Edit": self.edit_selected, "Delete": self.delete_selected,
+                    "Save": self.save_runs, "Load": self.load_runs}
         for text in ("Add", "Edit", "Delete", "Save", "Load"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
@@ -116,6 +117,46 @@ class TrackerApp:
         self.refresh_table(list(self.manager.get_models().items()))
         self.unsaved_changes = True
         self.status.config(text=f"Run {run_id} deleted")
+
+    def save_runs(self):
+        if not self.manager.get_models():
+            messagebox.showerror("No runs", "There are no runs to save.")
+            return
+        path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json"), ("CSV", "*.csv")])
+        if not path:
+            return
+        try:
+            if path.endswith(".csv"):
+                self.manager.save_csv(path)
+            else:
+                self.manager.save_json(path)
+        except OSError:
+            messagebox.showerror("Save failed", "Could not save the file.")
+            return
+        self.unsaved_changes = False
+        self.status.config(text=f"Saved {len(self.manager.get_models())} runs")
+
+    def load_runs(self):
+        if self.manager.get_models():
+            if not messagebox.askyesno("Load runs", "Loading will replace your current runs. Continue?"):
+                return
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json"), ("CSV", "*.csv")])
+        if not path:
+            return
+        try:
+            if path.endswith(".csv"):
+                self.manager.load_csv(path)
+            else:
+                self.manager.load_json(path)
+        except FileNotFoundError:
+            messagebox.showerror("Load failed", "File not found.")
+            return
+        except (ValueError, KeyError, TypeError) as e:
+            messagebox.showerror("Load failed", f"Could not load file: {e}")
+            return
+        self.refresh_table(list(self.manager.get_models().items()))
+        self.unsaved_changes = True
+        self.status.config(text=f"Loaded {len(self.manager.get_models())} runs")
 
     def refresh_table(self, pairs):
         for item in self.tree.get_children():
