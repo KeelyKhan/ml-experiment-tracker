@@ -32,6 +32,24 @@ class TrackerApp:
         notebook.add(runs_frame, text="Runs")
 
         columns = ("ID", "Name", "Train Acc", "Val Acc", "Train Loss", "Val Loss", "Epochs", "Batch", "LR")
+        controls = ttk.Frame(runs_frame)
+        controls.pack(side="top", fill="x", pady=5)
+
+        ttk.Label(controls, text="Sort by:").pack(side="left", padx=(5, 2))
+        self.sort_box = ttk.Combobox(controls, values=("Validation accuracy", "Validation loss"), state="readonly", width=18)
+        self.sort_box.current(0)
+        self.sort_box.pack(side="left", padx=2)
+        ttk.Button(controls, text="Sort", command=self.sort_table).pack(side="left", padx=(2, 15))
+
+        ttk.Label(controls, text="Filter:").pack(side="left", padx=2)
+        self.filter_box = ttk.Combobox(controls, values=("Accuracy ≥", "Loss ≤", "Name contains"), state="readonly", width=14)
+        self.filter_box.current(0)
+        self.filter_box.pack(side="left", padx=2)
+        self.filter_entry = ttk.Entry(controls, width=15)
+        self.filter_entry.pack(side="left", padx=2)
+        ttk.Button(controls, text="Filter", command=self.filter_table).pack(side="left", padx=2)
+        ttk.Button(controls, text="Show all", command=self.show_all).pack(side="left", padx=(15, 5))
+
         scrollbar = ttk.Scrollbar(runs_frame, orient="vertical")
         scrollbar.pack(side="right", fill="y")
         self.tree = ttk.Treeview(runs_frame, columns=columns, show="headings", yscrollcommand=scrollbar.set)
@@ -157,6 +175,37 @@ class TrackerApp:
         self.refresh_table(list(self.manager.get_models().items()))
         self.unsaved_changes = True
         self.status.config(text=f"Loaded {len(self.manager.get_models())} runs")
+
+    def sort_table(self):
+        metrics = {"Validation accuracy": "validation_accuracy", "Validation loss": "validation_loss"}
+        metric = metrics[self.sort_box.get()]
+        try:
+            pairs = self.manager.sort_runs(metric)
+        except ValueError as e:
+            messagebox.showerror("Sort failed", str(e))
+            return
+        self.refresh_table(pairs)
+        self.status.config(text=f"Sorted by {self.sort_box.get().lower()}")
+
+    def filter_table(self):
+        choice = self.filter_box.get()
+        value = self.filter_entry.get()
+        try:
+            if choice == "Accuracy ≥":
+                pairs = self.manager.filter_by_accuracy(float(value))
+            elif choice == "Loss ≤":
+                pairs = self.manager.filter_by_loss(float(value))
+            else:
+                pairs = self.manager.filter_by_name(value)
+        except ValueError as e:
+            messagebox.showerror("Invalid filter", f"Could not filter: {e}")
+            return
+        self.refresh_table(pairs)
+        self.status.config(text=f"Showing {len(pairs)} runs")
+
+    def show_all(self):
+        self.refresh_table(list(self.manager.get_models().items()))
+        self.status.config(text="Showing all runs")
 
     def refresh_table(self, pairs):
         for item in self.tree.get_children():
