@@ -21,8 +21,8 @@ class TrackerApp:
         left = ttk.Frame(self.root)
         left.grid(row=0, column=0, sticky="ns", padx=10, pady=(30, 0))
         commands = {"Add": self.open_run_form, "Edit": self.edit_selected, "Delete": self.delete_selected,
-                    "Save": self.save_runs, "Load": self.load_runs}
-        for text in ("Add", "Edit", "Delete", "Save", "Load"):
+                    "Save": self.save_runs, "Load": self.load_runs, "Statistics": self.show_statistics}
+        for text in ("Add", "Edit", "Delete", "Save", "Load", "Statistics"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
         self.notebook = ttk.Notebook(self.root)
@@ -50,31 +50,30 @@ class TrackerApp:
         ttk.Button(controls, text="Filter", command=self.filter_table).pack(side="left", padx=2)
         ttk.Button(controls, text="Show all", command=self.show_all).pack(side="left", padx=(15, 5))
 
-        scrollbar = ttk.Scrollbar(runs_frame, orient="vertical")
+        paned = ttk.PanedWindow(runs_frame, orient="vertical")
+        paned.pack(fill="both", expand=True)
+
+        table_frame = ttk.Frame(paned)
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical")
         scrollbar.pack(side="right", fill="y")
-        self.tree = ttk.Treeview(runs_frame, columns=columns, show="headings", yscrollcommand=scrollbar.set)
+        self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", yscrollcommand=scrollbar.set)
         scrollbar.config(command=self.tree.yview)
         for col in columns:
             self.tree.heading(col, text=col, anchor="center")
             self.tree.column(col, width=90, anchor="center")
         self.tree.pack(side="left", fill="both", expand=True)
+        paned.add(table_frame, weight=3)
 
-        stats_frame = ttk.Frame(self.notebook)
-        self.notebook.add(stats_frame, text="Statistics")
-
-        stats_controls = ttk.Frame(stats_frame)
-        stats_controls.pack(side="top", fill="x", pady=5)
-        ttk.Label(stats_controls, text="Metric:").pack(side="left", padx=(5, 2))
-        self.stats_box = ttk.Combobox(stats_controls, values=("Validation accuracy", "Validation loss"), state="readonly", width=18)
-        self.stats_box.current(0)
-        self.stats_box.pack(side="left", padx=2)
-        ttk.Button(stats_controls, text="Compute", command=self.show_statistics).pack(side="left", padx=2)
-
-        self.stats_label = ttk.Label(stats_frame, text="", justify="left")
-        self.stats_label.pack(side="top", anchor="w", padx=10, pady=10)
+        output_frame = ttk.Frame(paned)
+        output_scroll = ttk.Scrollbar(output_frame, orient="vertical")
+        output_scroll.pack(side="right", fill="y")
+        self.output = tk.Text(output_frame, height=8, state="disabled", font=("Consolas", 10), yscrollcommand=output_scroll.set)
+        output_scroll.config(command=self.output.yview)
+        self.output.pack(side="left", fill="both", expand=True)
+        paned.add(output_frame, weight=1)
 
         self.status = ttk.Label(self.root, text="Ready")
-        self.status.grid(row=1, column=0, columnspan=2, sticky="ew")
+        self.status.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=2)
 
         self.refresh_table(list(self.manager.get_models().items()))
 
@@ -225,21 +224,30 @@ class TrackerApp:
         if not self.manager.get_models():
             messagebox.showerror("No runs", "There are no runs to compute statistics on.")
             return
-        label = self.stats_box.get()
-        metric = "validation_accuracy" if label == "Validation accuracy" else "validation_loss"
-        try:
-            results = self.manager.get_statistics(metric)
-        except ValueError as e:
-            messagebox.showerror("Statistics failed", str(e))
-            return
-        best_id = results["best_run_id"]
-        best_name = self.manager.get_models()[best_id].model_name
-        self.stats_label.config(text=f"""Statistics of {label}:
+        text = ""
+        for metric, label in (("validation_accuracy", "Validation Accuracy"), ("validation_loss", "Validation Loss")):
+            try:
+                results = self.manager.get_statistics(metric)
+            except ValueError as e:
+                messagebox.showerror("Statistics failed", str(e))
+                return
+            best_id = results["best_run_id"]
+            best_name = self.manager.get_models()[best_id].model_name
+            text += f"""Statistics of {label}:
 Mean: {results['mean']:.4f}
 Variance: {results['variance']:.4f}
 Standard Deviation: {results['std_dev']:.4f}
-Best Run ID: {best_id} ({best_name})""")
-        self.status.config(text=f"Statistics computed for {label.lower()}")
+Best Run ID: {best_id} ({best_name})
+
+"""
+        self.write_output(text.rstrip())
+        self.status.config(text="Statistics computed")
+
+    def write_output(self, text):
+        self.output.config(state="normal")
+        self.output.delete("1.0", "end")
+        self.output.insert("end", text)
+        self.output.config(state="disabled")
 
     def refresh_table(self, pairs):
         for item in self.tree.get_children():
