@@ -59,12 +59,6 @@ cover/
 #Jupyter Notebook
 *.ipynb
 
-#Json Files for testing
-*.json
-
-#CSV Files for testing
-*.csv
-
 # Django stuff:
 *.log
 local_settings.py
