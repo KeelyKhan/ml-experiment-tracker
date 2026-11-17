@@ -13,6 +13,7 @@ class TrackerApp:
         self.manager = ModelManager()
         self.unsaved_changes = False
         self.build_layout()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def build_layout(self):
         self.root.columnconfigure(1, weight=1)
@@ -153,10 +154,10 @@ class TrackerApp:
     def save_runs(self):
         if not self.manager.get_models():
             messagebox.showerror("No runs", "There are no runs to save.")
-            return
+            return False
         path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json"), ("CSV", "*.csv")])
         if not path:
-            return
+            return False
         try:
             if path.endswith(".csv"):
                 self.manager.save_csv(path)
@@ -164,9 +165,21 @@ class TrackerApp:
                 self.manager.save_json(path)
         except OSError:
             messagebox.showerror("Save failed", "Could not save the file.")
-            return
+            return False
         self.unsaved_changes = False
         self.status.config(text=f"Saved {len(self.manager.get_models())} runs")
+        return True
+
+    def on_close(self):
+        if not self.unsaved_changes:
+            self.root.destroy()
+            return
+        answer = messagebox.askyesnocancel("Unsaved changes", "Save before closing?")
+        if answer is True:
+            if self.save_runs():
+                self.root.destroy()
+        elif answer is False:
+            self.root.destroy()
 
     def load_runs(self):
         if self.manager.get_models():
