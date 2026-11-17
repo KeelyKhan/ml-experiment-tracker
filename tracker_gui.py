@@ -21,8 +21,9 @@ class TrackerApp:
         left = ttk.Frame(self.root)
         left.grid(row=0, column=0, sticky="ns", padx=10, pady=(30, 0))
         commands = {"Add": self.open_run_form, "Edit": self.edit_selected, "Delete": self.delete_selected,
-                    "Save": self.save_runs, "Load": self.load_runs, "Statistics": self.show_statistics}
-        for text in ("Add", "Edit", "Delete", "Save", "Load", "Statistics"):
+                    "Save": self.save_runs, "Load": self.load_runs, "Statistics": self.show_statistics,
+                    "Recommendations": self.show_recommendations}
+        for text in ("Add", "Edit", "Delete", "Save", "Load", "Statistics", "Recommendations"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
         self.notebook = ttk.Notebook(self.root)
@@ -242,6 +243,24 @@ Best Run ID: {best_id} ({best_name})
 """
         self.write_output(text.rstrip())
         self.status.config(text="Statistics computed")
+
+    def show_recommendations(self):
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showerror("No selection", "Select a run first")
+            return
+        values = self.tree.item(selected[0], "values")
+        run_id = int(values[0])
+        try:
+            results = self.manager.recommend(run_id)
+        except KeyError as e:
+            messagebox.showerror("Recommendations failed", str(e))
+            return
+        text = f"Recommendations for run {run_id} ({values[1]})\n"
+        for result in results:
+            text += f"\nIssue: {result['issue']}\nSuggestion: {result['suggestion']}\n"
+        self.write_output(text.rstrip())
+        self.status.config(text=f"Recommendations shown for run {run_id}")
 
     def write_output(self, text):
         self.output.config(state="normal")
