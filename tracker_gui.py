@@ -25,11 +25,11 @@ class TrackerApp:
         for text in ("Add", "Edit", "Delete", "Save", "Load"):
             ttk.Button(left, text=text, command=commands.get(text)).pack(fill="x", pady=3)
 
-        notebook = ttk.Notebook(self.root)
-        notebook.grid(row=0, column=1, sticky="nsew")
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.grid(row=0, column=1, sticky="nsew")
 
-        runs_frame = ttk.Frame(notebook)
-        notebook.add(runs_frame, text="Runs")
+        runs_frame = ttk.Frame(self.notebook)
+        self.notebook.add(runs_frame, text="Runs")
 
         columns = ("ID", "Name", "Train Acc", "Val Acc", "Train Loss", "Val Loss", "Epochs", "Batch", "LR")
         controls = ttk.Frame(runs_frame)
@@ -58,6 +58,20 @@ class TrackerApp:
             self.tree.heading(col, text=col, anchor="center")
             self.tree.column(col, width=90, anchor="center")
         self.tree.pack(side="left", fill="both", expand=True)
+
+        stats_frame = ttk.Frame(self.notebook)
+        self.notebook.add(stats_frame, text="Statistics")
+
+        stats_controls = ttk.Frame(stats_frame)
+        stats_controls.pack(side="top", fill="x", pady=5)
+        ttk.Label(stats_controls, text="Metric:").pack(side="left", padx=(5, 2))
+        self.stats_box = ttk.Combobox(stats_controls, values=("Validation accuracy", "Validation loss"), state="readonly", width=18)
+        self.stats_box.current(0)
+        self.stats_box.pack(side="left", padx=2)
+        ttk.Button(stats_controls, text="Compute", command=self.show_statistics).pack(side="left", padx=2)
+
+        self.stats_label = ttk.Label(stats_frame, text="", justify="left")
+        self.stats_label.pack(side="top", anchor="w", padx=10, pady=10)
 
         self.status = ttk.Label(self.root, text="Ready")
         self.status.grid(row=1, column=0, columnspan=2, sticky="ew")
@@ -206,6 +220,26 @@ class TrackerApp:
     def show_all(self):
         self.refresh_table(list(self.manager.get_models().items()))
         self.status.config(text="Showing all runs")
+
+    def show_statistics(self):
+        if not self.manager.get_models():
+            messagebox.showerror("No runs", "There are no runs to compute statistics on.")
+            return
+        label = self.stats_box.get()
+        metric = "validation_accuracy" if label == "Validation accuracy" else "validation_loss"
+        try:
+            results = self.manager.get_statistics(metric)
+        except ValueError as e:
+            messagebox.showerror("Statistics failed", str(e))
+            return
+        best_id = results["best_run_id"]
+        best_name = self.manager.get_models()[best_id].model_name
+        self.stats_label.config(text=f"""Statistics of {label}:
+Mean: {results['mean']:.4f}
+Variance: {results['variance']:.4f}
+Standard Deviation: {results['std_dev']:.4f}
+Best Run ID: {best_id} ({best_name})""")
+        self.status.config(text=f"Statistics computed for {label.lower()}")
 
     def refresh_table(self, pairs):
         for item in self.tree.get_children():
