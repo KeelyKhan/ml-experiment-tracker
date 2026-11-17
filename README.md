@@ -5,9 +5,11 @@
 A Python application for recording, comparing and analysing machine learning experiment runs. It has two front ends that share the same core logic:
 
 - **Text-based version** (command line): `tracker_cli.py`
-- **GUI version** (Tkinter): *in progress*
+- **GUI version** (Tkinter): `tracker_gui.py`
 
 Developed for CSC-44102 Foundations of Programming and Software Engineering, Keele University.
+
+![GUI screenshot](docs/gui_screenshot.png)
 
 ## Features
 - Add, update and delete runs (each run has a unique ID)
@@ -17,10 +19,11 @@ Developed for CSC-44102 Foundations of Programming and Software Engineering, Kee
 - Statistics: mean, variance, standard deviation and best run
 - Rule-based training suggestions (overfitting, underfitting, learning rate, epochs)
 - Input validation with friendly error messages; invalid files never overwrite existing runs
+- Prompt to save unsaved changes before quitting (both versions)
 
 ## Requirements
 - Python 3.12 or later
-- Standard library only, no extra installs
+- Standard library only, no extra installs (Tkinter is included with Python)
 
 ## How to run
 
@@ -28,7 +31,19 @@ Developed for CSC-44102 Foundations of Programming and Software Engineering, Kee
 ```
 python tracker_cli.py
 ```
-Choose options from the numbered menu. Unsaved changes trigger a save prompt when quitting.
+Choose options from the numbered menu.
+
+### GUI version
+```
+python tracker_gui.py
+```
+- Use the buttons on the left to add, edit, delete, save and load runs.
+- Select a row in the table before using **Edit**, **Delete** or **Recommendations**.
+- Use the controls above the table to sort or filter; **Show all** resets the view.
+- Statistics and recommendations appear in the panel below the table (drag the divider to resize it).
+
+### Try it with sample data
+Load `sample_data/sample_runs.csv` in either version to explore the features with 12 example runs.
 
 ### Run the tests
 ```
@@ -58,11 +73,13 @@ ResNet18,95.0,0.12,94.0,0.15,20,32,0.01
 
 ## Project structure
 ```
-tracker_core.py        core logic (data, validation, storage, sorting, statistics, recommendations)
-tracker_cli.py         command-line interface
-test_tracker_core.py   unit tests
-.github/workflows/     CI configuration
+tracker_core.py           core logic (data, validation, storage, sorting, statistics, recommendations)
+tracker_cli.py            command-line interface
+tracker_gui.py            Tkinter graphical interface
+test_tracker_core.py      unit tests
+sample_data/              example runs for trying the app
+.github/workflows/        CI configuration
 ```
 
 ## GenAI acknowledgement
-This README was written with the help of Claude (Anthropic, https://claude.ai). The application code is my own work; Claude was used only to review drafts and give feedback, as permitted for Assessment 1.
+This README and the sample data were produced with the help of Claude (Anthropic, https://claude.ai). The application code is my own work; Claude was used only to review drafts and give feedback, as permitted for Assessment 1.
